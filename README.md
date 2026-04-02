@@ -1,7 +1,7 @@
 # Multi-Agent Full-Stack App Generator
 ### Course Materials — AI-Assisted Software Engineering
 
-A two-session college course (2 × 1 hour) where Junior and Senior CS students build a complete full-stack web application using four collaborating Claude Code agents.
+A two-session course students build a complete full-stack web application using four collaborating Claude Code agents.
 
 ---
 
