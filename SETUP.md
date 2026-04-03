@@ -427,11 +427,74 @@ The course repository contains the prompt files, skill definitions, and helper s
 
 ---
 
-## Section 5: Install Language Runtimes
+## Section 5: Install JDK 21 (Required for All Students)
 
-This course requires Node.js for all students. Python is only required if you choose the FastAPI backend track. Check your course assignment sheet if you are unsure which backend you are using.
+The Kotlin backend runs on the Java Virtual Machine. JDK 21 is required for all students regardless of backend choice.
 
-### Node.js v18 or Higher (Required for All Students)
+### Mac
+
+Check if JDK 21+ is already installed:
+
+```bash
+java -version
+```
+
+If you see `openjdk version "21.x.x"` or higher, skip to the verify step.
+
+If not installed, install with Homebrew:
+
+```bash
+brew install openjdk@21
+```
+
+After installing, add it to your PATH. Run this command, then close and reopen your terminal:
+
+```bash
+echo 'export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"' >> ~/.zshrc
+echo 'export JAVA_HOME="/opt/homebrew/opt/openjdk@21"' >> ~/.zshrc
+source ~/.zshrc
+```
+
+### Windows
+
+1. Go to [https://adoptium.net](https://adoptium.net)
+2. Click **Latest LTS** — select **Temurin 21**
+3. Download the `.msi` installer for Windows x64
+4. Run the installer using all default options — make sure **"Add to PATH"** and **"Set JAVA_HOME"** are checked
+5. Click **Install** and finish
+
+### Verify JDK
+
+```bash
+java -version
+```
+
+```powershell
+java -version
+```
+
+Expected: `openjdk version "21.x.x"` or higher. The exact vendor (Temurin, OpenJDK, etc.) does not matter.
+
+---
+
+> **Troubleshooting — JDK**
+>
+> **"java: command not found" after installing on Mac.**
+> You need to reload your shell config. Run `source ~/.zshrc` then try again. If still missing, confirm the export line was added: `cat ~/.zshrc | grep openjdk`
+>
+> **Windows: "java is not recognized" after installing.**
+> The installer did not add Java to PATH. Go to System Properties → Environment Variables → add `C:\Program Files\Eclipse Adoptium\jdk-21.x.x\bin` to the Path variable, then open a new PowerShell window.
+>
+> **"wrong java version" — need exactly 21.**
+> Run `java -version` to check. Any 21.x.x or higher is fine.
+
+---
+
+## Section 7: Install Node.js (Required for All Students)
+
+Node.js powers the React frontend and the extract helper script.
+
+### Node.js v18 or Higher
 
 Node.js powers the frontend and several course scripts.
 
@@ -483,9 +546,9 @@ Expected output:
 
 ---
 
-### Python 3.10 or Higher (FastAPI Backend Track Only)
+### Python 3.10 or Higher (Required for extract_files.py)
 
-Skip this section if you are not using the FastAPI backend.
+Python is required by all students to run the `extract_files.py` helper script.
 
 #### Mac
 
@@ -540,7 +603,7 @@ Expected output: `Python 3.10.x` or higher.
 
 ---
 
-## Section 6: Install the /build-app Skill
+## Section 9: Install the /build-app Skill
 
 Skills extend what Claude Code can do. The `/build-app` skill is the primary tool you will use to generate your project.
 
@@ -615,7 +678,7 @@ Skills extend what Claude Code can do. The `/build-app` skill is the primary too
 
 ---
 
-## Section 7: Final Verification Checklist
+## Section 8: Final Verification Checklist
 
 Before your first lab session, confirm every item below is working on your machine. Run each command and check that the output matches what is described.
 
@@ -687,7 +750,21 @@ If any item fails, go back to the corresponding section and follow the troublesh
 
 ---
 
-- [ ] **6. Node.js v18+ and npm are installed**
+- [ ] **6. JDK 21+ is installed**
+
+    ```bash
+    java -version
+    ```
+
+    ```powershell
+    java -version
+    ```
+
+    Expected: `openjdk version "21.x.x"` or higher. If missing, return to Section 5.
+
+---
+
+- [ ] **7. Node.js v18+ and npm are installed**
 
     ```bash
     node --version
@@ -703,7 +780,7 @@ If any item fails, go back to the corresponding section and follow the troublesh
 
 ---
 
-- [ ] **7. Python 3.10+ is installed (FastAPI track only — skip if not applicable)**
+- [ ] **8. Python 3.10+ is installed**
 
     ```bash
     python3 --version
@@ -717,7 +794,7 @@ If any item fails, go back to the corresponding section and follow the troublesh
 
 ---
 
-- [ ] **8. Course repo is cloned and /build-app skill is installed**
+- [ ] **9. Course repo is cloned and /build-app skill is installed**
 
     ```bash
     ls ~/Documents/course-ai-agents/skills/

@@ -6,9 +6,9 @@
 
 ## Overview
 
-Students select one of twelve project ideas and use a four-agent Claude Code pipeline to generate a complete full-stack application. Each agent writes output to a local file; the next agent reads that file as context. A helper script (`extract_files.py`) materializes those files into real source directories. By the end of Session 2, students have a running React + Node/Express (or Python/FastAPI) app backed by SQLite, reviewed by an AI agent, and stored in a GitHub repository.
+Students select one of twelve project ideas and use a four-agent Claude Code pipeline to generate a complete full-stack application. Each agent writes output to a local file; the next agent reads that file as context. A helper script (`extract_files.py`) materializes those files into real source directories. By the end of Session 2, students have a running React + Kotlin/Ktor app backed by SQLite, reviewed by an AI agent, and stored in a GitHub repository.
 
-**Tech Stack:** React + Vite (frontend) | Node/Express or Python/FastAPI (backend) | SQLite (database)
+**Tech Stack:** React + Vite (frontend) | Kotlin + Ktor + Exposed (backend) | SQLite (database)
 
 **File Chain:** `design.md` → `frontend_output.md` → `backend_output.md` → `REVIEW.md`
 
@@ -16,8 +16,9 @@ Students select one of twelve project ideas and use a four-agent Claude Code pip
 
 ## Prerequisites for Students
 
-- Node.js 18+ and npm installed
-- Python 3.10+ installed
+- Node.js 18+ and npm installed (for the React frontend)
+- JDK 21+ installed (`java -version` shows 21 or higher)
+- Python 3.10+ installed (for `extract_files.py`)
 - Claude Code CLI installed and authenticated (`claude --version` returns a version string)
 - Git installed and configured with a GitHub account
 - A terminal emulator (macOS Terminal, iTerm2, Windows Terminal, or WSL2)
@@ -61,6 +62,7 @@ By the end of Class 1 students will be able to:
 
 ```bash
 node --version        # expect v18.x or higher
+java -version         # expect 21.x or higher
 python3 --version     # expect 3.10 or higher
 claude --version      # expect a Claude Code version string
 git --version         # expect git version 2.x
@@ -145,7 +147,7 @@ backend_output.md → extract_files.py → backend/       |
 - Narrates each agent's responsibility in one sentence:
   - **design-agent**: takes the project idea; outputs API spec, DB schema, and component tree
   - **frontend-agent**: reads `design.md`; outputs all React + Vite source files
-  - **backend-agent**: reads `design.md`; outputs all Express or FastAPI source files
+  - **backend-agent**: reads `design.md`; outputs all Kotlin + Ktor source files
   - **review-agent**: reads all three prior files; outputs a structured code review with issues and verdict
 - Explains why files are the handoff: inspectable, version-controllable, resumable, recoverable
 
@@ -216,7 +218,6 @@ mkdir ~/cs-agents/demo-project && cd ~/cs-agents/demo-project
 ```bash
 claude -p "$(sed \
   -e 's|{PROJECT_IDEA}|Recipe Box|g' \
-  -e 's|{BACKEND}|node|g' \
   ~/Documents/course-ai-agents/prompts/01_design_agent.md)" > design.md
 ```
 
@@ -254,7 +255,6 @@ Always run `claude --version` in the demo terminal before class to confirm authe
 cd ~/cs-agents/my-project
 claude -p "$(sed \
   -e 's|{PROJECT_IDEA}|Habit Tracker|g' \
-  -e 's|{BACKEND}|node|g' \
   ~/Documents/course-ai-agents/prompts/01_design_agent.md)" > design.md
 
 # Verify
@@ -512,25 +512,23 @@ Students who copy from a chat app may have smart quotes causing shell syntax err
 
 ```bash
 cd ~/cs-agents/demo-project
-claude -p "$(sed 's|{BACKEND}|node|g' \
-  ~/Documents/course-ai-agents/prompts/03_backend_agent.md)" \
+claude -p "$(cat ~/Documents/course-ai-agents/prompts/03_backend_agent.md)" \
   --context "$(cat design.md)" > backend_output.md
 
 python3 ~/Documents/course-ai-agents/scripts/extract_files.py backend_output.md
 
 find backend/ -type f | sort
-head -50 backend/routes/recipes.js   # adjust filename to match output
+head -50 backend/src/main/kotlin/com/app/routes/RecipesRoutes.kt  # adjust filename to match output
 ```
 
-- Points out the `{BACKEND}` placeholder substitution via `sed`
 - Shows that endpoint paths in the generated route file match `design.md`'s API Spec
 
 **What Students Do:**
 - Note the structural similarity to the frontend agent workflow (same three steps)
-- Write down the `sed 's|{BACKEND}|node|g'` pattern for their own exercise
+- Note that the Kotlin backend is in `backend/src/main/kotlin/` — a standard Gradle project layout
 
 **Facilitation Tips:**
-Students choosing Python/FastAPI need the alternate prompt variant — post it to the course repo. The most common backend agent issue is generating routes with a different base path than the frontend calls; the review agent catches this. Keep the demo tight — 8 minutes goes fast.
+The most common backend agent issue is generating routes with a different base path than the frontend calls; the review agent catches this. Keep the demo tight — 8 minutes goes fast.
 
 **Transition:** Run the backend agent on your own project.
 
@@ -548,19 +546,17 @@ Students choosing Python/FastAPI need the alternate prompt variant — post it t
 ```bash
 # Mac / Linux
 cd ~/cs-agents/my-project
-claude -p "$(sed 's|{BACKEND}|node|g' \
-  ~/Documents/course-ai-agents/prompts/03_backend_agent.md)" \
+claude -p "$(cat ~/Documents/course-ai-agents/prompts/03_backend_agent.md)" \
   --context "$(cat design.md)" > backend_output.md
 
 python3 ~/Documents/course-ai-agents/scripts/extract_files.py backend_output.md
 
 # Verify
-grep "3001" backend/server.js
-grep "better-sqlite3" backend/package.json
+grep "3001" backend/src/main/kotlin/com/app/Application.kt
+grep "sqlite" backend/build.gradle.kts
 
 # Windows (PowerShell)
-$p = (Get-Content ~\Documents\course-ai-agents\prompts\03_backend_agent.md -Raw) `
-  -replace '\{BACKEND\}','node'
+$p = Get-Content ~\Documents\course-ai-agents\prompts\03_backend_agent.md -Raw
 $c = Get-Content design.md -Raw
 claude -p $p --context $c | Out-File -Encoding utf8 backend_output.md
 python ~\Documents\course-ai-agents\scripts\extract_files.py backend_output.md
@@ -571,7 +567,7 @@ python ~\Documents\course-ai-agents\scripts\extract_files.py backend_output.md
 - Keep `backend_output.md` on disk — agent 04 reads it
 
 **Facilitation Tips:**
-If `grep "3001" backend/server.js` returns nothing, have the student open `server.js` and manually change the port. This is a good teachable moment: agent output sometimes needs targeted manual fixes. Remind Python/FastAPI students to use the alternate prompt and swap `node` for `python`.
+If `grep "3001" backend/src/main/kotlin/com/app/Application.kt` returns nothing, open `Application.kt` and check the port — this is a teachable moment about targeted manual fixes. On first run, `./gradlew run` downloads Gradle dependencies which can take 1–2 minutes; warn students ahead of time.
 
 **Transition:** Frontend and backend are ready — let's start both servers and see the app in a browser.
 
@@ -587,13 +583,14 @@ If `grep "3001" backend/server.js` returns nothing, have the student open `serve
 - Opens two terminal tabs on the projector:
 
 ```bash
-# Tab 1 — Backend
+# Tab 1 — Backend (Kotlin + Ktor)
 cd ~/cs-agents/demo-project/backend
-npm install
-node server.js
-# Expected: "Server running on port 3001"
+./gradlew run          # Mac/Linux
+gradlew.bat run        # Windows
+# Expected: "Application started. Listening on port 3001"
+# First run downloads Gradle dependencies (~1-2 min)
 
-# Tab 2 — Frontend
+# Tab 2 — Frontend (React + Vite)
 cd ~/cs-agents/demo-project/frontend
 npm install
 npm run dev
@@ -673,7 +670,7 @@ claude
 
 ```bash
 mkdir ~/cs-agents/skill-demo && cd ~/cs-agents/skill-demo
-/build-app "Bug Tracker" node
+/build-app "Bug Tracker"
 ```
 
 **What Students Do:**
@@ -729,12 +726,13 @@ Students who haven't run `gh auth login` will get a 401. Fallback: create repo o
 
 1. Run `claude --version` on the demo machine — re-authenticate if needed with `claude auth login`
 2. Confirm `node --version` shows v18 or higher; use `nvm install 18 && nvm use 18` if not
-3. Confirm `python3 --version` shows 3.10 or higher
-4. Verify `extract_files.py` runs without error: `python3 extract_files.py --help`
-5. Pre-generate a `design.md` for "Recipe Box" and save as a backup in case the live demo agent run fails
-6. Set terminal font size to 18pt minimum; confirm readability from the back of the room
-7. Post the course repo URL and SETUP.md link to students via LMS before class
-8. Save all demo commands to a `demo_commands.txt` backup file you can copy-paste from if the terminal session crashes
+3. Confirm `java -version` shows 21 or higher; install with `brew install openjdk@21` if not
+4. Confirm `python3 --version` shows 3.10 or higher
+5. Verify `extract_files.py` runs without error: `python3 extract_files.py --help`
+6. Pre-generate a `design.md` for "Recipe Box" and save as a backup in case the live demo agent run fails
+7. Set terminal font size to 18pt minimum; confirm readability from the back of the room
+8. Post the course repo URL and SETUP.md link to students via LMS before class
+9. Save all demo commands to a `demo_commands.txt` backup file you can copy-paste from if the terminal session crashes
 
 ### Before Class 2
 
@@ -743,7 +741,7 @@ Students who haven't run `gh auth login` will get a 401. Fallback: create repo o
 3. Pre-run the backend agent offline and save `backend_output.md` to a backup location
 4. Test `extract_files.py` on both backup files and confirm `frontend/` and `backend/` directories are created correctly
 5. Pre-install the `/build-app` skill and verify it appears with `ls ~/.claude/skills/`
-6. Run `npm install` in both `frontend/` and `backend/` and confirm it succeeds with no missing package errors
+6. Run `npm install` in `frontend/` and `./gradlew run` in `backend/` and confirm both start without errors
 7. Confirm the app loads at `http://localhost:5173` with no CORS errors in the browser console
 8. Confirm `gh auth status` shows an authenticated GitHub account for the push demo
 
@@ -788,10 +786,21 @@ source ~/.zshrc
 python3 ~/Documents/course-ai-agents/scripts/extract_files.py frontend_output.md
 ```
 
-**`Error: EADDRINUSE :::3001` (port already in use)**
+**`java: command not found` or wrong Java version**
+```bash
+# Install JDK 21 via Homebrew (no sudo required):
+brew install openjdk@21
+# Add to ~/.zshrc:
+export PATH="/opt/homebrew/opt/openjdk@21/bin:$PATH"
+export JAVA_HOME="/opt/homebrew/opt/openjdk@21"
+source ~/.zshrc
+java -version   # should show 21.x
+```
+
+**Port 3001 already in use**
 ```bash
 lsof -ti:3001 | xargs kill -9
-node server.js
+cd backend && ./gradlew run
 ```
 
 ### Windows
@@ -865,7 +874,7 @@ Modify `build-app.md` to add a Step 8 that checks whether the review agent gave 
 
 4. **[React + Vite Official Docs](https://vitejs.dev/guide/)** — Authoritative guide to Vite's dev server, build config, and plugin ecosystem; essential for customizing the frontend scaffold the agent generates.
 
-5. **[FastAPI Tutorial](https://fastapi.tiangolo.com/tutorial/)** — Step-by-step guide to Python APIs with automatic OpenAPI docs; the fastest path to understanding what the FastAPI backend agent produces.
+5. **[Ktor Documentation](https://ktor.io/docs/welcome.html)** — Official guide to Ktor server features, routing, plugins, and deployment; the fastest path to customizing what the Kotlin backend agent produces.
 
 6. **[The Pragmatic Engineer Newsletter](https://newsletter.pragmaticengineer.com)** — Practitioner-focused coverage of how working engineers are integrating AI agents into real development workflows; gives industry context for the skills learned in this course.
 

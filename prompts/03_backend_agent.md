@@ -1,6 +1,6 @@
 <!-- ============================================================
      PROMPT FILE: 03_backend_agent.md
-     AGENT ROLE:  Backend Developer (Node/Express OR Python/FastAPI)
+     AGENT ROLE:  Backend Developer (Kotlin + Ktor + Exposed + SQLite)
      ---------------------------------------------------------------
      READS:   design.md  (output of 01_design_agent.md)
               The agent uses the ## API Spec and ## DB Schema
@@ -13,35 +13,35 @@
               Extract these blocks into backend/ (see below).
 
      HOW TO RUN (must run 01_design_agent.md first):
-       Replace "node" with "python" to get FastAPI output instead.
 
        Mac / Linux:
-         claude -p "$(sed 's|{BACKEND}|node|g' \
-           prompts/03_backend_agent.md)" \
+         claude -p "$(cat prompts/03_backend_agent.md)" \
            --context "$(cat design.md)" \
            > backend_output.md
 
        Windows (PowerShell):
-         $prompt  = (Get-Content prompts\03_backend_agent.md -Raw) `
-           -replace '\{BACKEND\}','node'
+         $prompt  = Get-Content prompts\03_backend_agent.md -Raw
          $context = Get-Content design.md -Raw
          claude -p $prompt --context $context | `
            Out-File -Encoding utf8 backend_output.md
 
-     NOTE: design.md is the SAME file used by 02_frontend_agent.md.
-     Both agents read the same contract — that is what keeps the
-     frontend and backend in sync without them talking to each other.
-
      EXTRACT FILES (after running):
-       grep "// FILE:\|# FILE:" backend_output.md  (Mac/Linux)
        python3 scripts/extract_files.py backend_output.md
 
      VERIFY OUTPUT:
-       You should see files for:
-         Node path:   backend/server.js, backend/db.js,
-                      backend/routes/<resource>.js, backend/package.json
-         Python path: backend/main.py, backend/database.py,
-                      backend/routers/<resource>.py, backend/requirements.txt
+       grep "# FILE:" backend_output.md
+       You should see:
+         backend/build.gradle.kts
+         backend/settings.gradle.kts
+         backend/src/main/kotlin/com/app/Application.kt
+         backend/src/main/kotlin/com/app/DatabaseFactory.kt
+         backend/src/main/kotlin/com/app/models/<Resource>.kt
+         backend/src/main/kotlin/com/app/routes/<Resource>Routes.kt
+
+     START THE SERVER (after extracting):
+       cd backend
+       ./gradlew run
+       → API running at http://localhost:3001
 
      NEXT STEP:
        Run prompts/04_review_agent.md
@@ -49,90 +49,100 @@
 ============================================================ -->
 
 ## System
-You are a senior backend engineer.
-Your chosen framework is {BACKEND}.
-You write complete, production-quality server code with no placeholders.
-Every endpoint in the API Spec must be fully implemented — no TODOs.
+You are a senior Kotlin engineer specializing in Ktor REST APIs.
+You write complete, production-quality Kotlin code with no placeholders or TODOs.
+Every endpoint in the API Spec must be fully implemented.
 
 ## Task
 Using the ## API Spec and ## DB Schema sections from the design document
 provided in context, generate every backend source file for this application.
 
+### Tech stack (use exactly these versions)
+- Kotlin 1.9.25
+- Ktor 2.3.12 (server-core, server-netty, server-content-negotiation, server-cors, serialization-kotlinx-json)
+- Exposed 0.55.0 (exposed-core, exposed-dao, exposed-jdbc)
+- SQLite JDBC 3.47.1.0 (org.xerial:sqlite-jdbc)
+- Logback 1.5.12
+- JVM toolchain: 21
+
 ### Output format rules (CRITICAL — follow exactly)
 - Output one fenced code block per file
-- Begin every code block with a comment on the first line:
-    JavaScript:  // FILE: backend/server.js
-    Python:      # FILE: backend/main.py
-    Text files:  # FILE: backend/requirements.txt
-- After each block, write one sentence explaining what the file does
-- Do not output anything outside of file blocks and their explanations
+- Begin every code block with a comment on the FIRST LINE:
+    Kotlin:     // FILE: backend/src/main/kotlin/com/app/Application.kt
+    Gradle KTS: // FILE: backend/build.gradle.kts
+    Properties: # FILE: backend/gradle/wrapper/gradle-wrapper.properties
+- After each block write one sentence explaining what the file does
+- Do not output anything outside file blocks and their explanations
 
----
-## If {BACKEND} is "node" — generate these files:
+### Files to generate (in this order)
 
-1. **backend/package.json**
-   - scripts: { "start": "node server.js" }
-   - dependencies: express, better-sqlite3, cors, dotenv
+1. **backend/settings.gradle.kts**
+   - Set rootProject.name to "app"
 
-2. **backend/server.js**
-   - Creates the Express app
-   - Applies cors() middleware — allow origin http://localhost:5173
-   - Applies express.json() middleware
-   - Imports and mounts every route file from backend/routes/
-   - Calls initDb() from db.js on startup to create tables if missing
-   - Listens on process.env.PORT || 3001
-   - Logs "Server running on port 3001" when ready
+2. **backend/build.gradle.kts**
+   - Kotlin JVM plugin 1.9.25
+   - kotlinx.serialization plugin
+   - application plugin, mainClass = "com.app.ApplicationKt"
+   - All Ktor, Exposed, SQLite JDBC, and Logback dependencies
+   - JVM toolchain 21
 
-3. **backend/db.js**
-   - Opens (or creates) a SQLite file at ./data/app.db using better-sqlite3
-   - Exports the db instance
-   - Exports an initDb() function that runs CREATE TABLE IF NOT EXISTS
-     for every table in the ## DB Schema
-   - Seeds each table with 3 sample rows if the table is empty
+3. **backend/gradle/wrapper/gradle-wrapper.properties**
+   - distributionUrl for Gradle 8.10
 
-4. **backend/routes/<resource>.js** (one file per primary resource)
-   - Implements every endpoint from the ## API Spec for that resource
-   - Uses db.prepare().get() / .all() / .run() for queries
-   - Returns appropriate HTTP status codes (200, 201, 404, 400, 500)
-   - Wraps each handler in try/catch and returns JSON errors
+4. **backend/src/main/kotlin/com/app/Application.kt**
+   - `fun main()` entry point
+   - Call DatabaseFactory.init() before starting the server
+   - embeddedServer(Netty, port = 3001)
+   - Install ContentNegotiation with kotlinx JSON (prettyPrint = true, ignoreUnknownKeys = true)
+   - Install CORS: allowHost("localhost:5173"), allow Content-Type header,
+     allow GET / POST / PUT / DELETE methods
+   - Call every route registration function from the routes/ package
 
----
-## If {BACKEND} is "python" — generate these files:
+5. **backend/src/main/kotlin/com/app/DatabaseFactory.kt**
+   - Singleton object DatabaseFactory
+   - init() function: create data/ directory, connect to jdbc:sqlite:data/app.db,
+     run SchemaUtils.createMissingTablesAndColumns() for every table in the DB Schema,
+     seed 3 sample rows per table if the table is empty
 
-1. **backend/requirements.txt**
-   - fastapi, uvicorn[standard], pydantic, python-multipart
+6. **backend/src/main/kotlin/com/app/models/<Resource>.kt**
+   (one file per primary resource in the DB Schema)
+   - Use `IntIdTable` (import `org.jetbrains.exposed.dao.id.IntIdTable`) — NOT plain `Table`
+     Example: `object Items : IntIdTable("items") { val name = varchar("name", 255) }`
+   - `IntIdTable` auto-creates the `id` column; do NOT declare it manually
+   - @Serializable data class for JSON responses (all fields including id as Int)
+   - A separate @Serializable Create<Resource> data class (without id/createdAt)
+     for POST request bodies
 
-2. **backend/main.py**
-   - Creates the FastAPI app instance
-   - Adds CORSMiddleware — allow origins ["http://localhost:5173"]
-   - Includes every router from backend/routers/
-   - Calls init_db() from database.py at startup via @app.on_event("startup")
-   - Runs on host 0.0.0.0, port 3001 when executed directly
+7. **backend/src/main/kotlin/com/app/routes/<Resource>Routes.kt**
+   (one file per primary resource)
+   - Extension function `fun Application.<resource>Routes()`
+   - Implement every endpoint from the ## API Spec for that resource
+   - Use Exposed transactions for all DB access
+   - For POST, use `insert { }` (NOT `insertAndGetId`) and retrieve the id via
+     `stmt[Table.id].value`:
+     ```kotlin
+     val stmt = Items.insert { it[name] = body.name }
+     val created = Item(id = stmt[Items.id].value, name = body.name)
+     ```
+   - For DELETE, import `org.jetbrains.exposed.sql.SqlExpressionBuilder.eq` explicitly
+     or the `eq` operator will not resolve inside `deleteWhere { }`:
+     ```kotlin
+     import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+     Items.deleteWhere { Items.id eq id }
+     ```
+   - Return 200 for GET, 201 for POST creates, 204 for DELETE
+   - Return 404 with a JSON error body when a record is not found
+   - Return 400 with a JSON error body for invalid input
+   - Wrap every handler body in try/catch, return 500 on unexpected errors
 
-3. **backend/database.py**
-   - Opens (or creates) a SQLite file at ./data/app.db using stdlib sqlite3
-   - Exports get_db() as a FastAPI dependency (yields connection, closes after)
-   - Exports init_db() that runs CREATE TABLE IF NOT EXISTS for every table
-     in the ## DB Schema and seeds 3 sample rows per table if empty
-
-4. **backend/models.py**
-   - One Pydantic BaseModel per resource matching the ## DB Schema
-   - A separate CreateModel (without id/created_at) for POST request bodies
-
-5. **backend/routers/<resource>.py** (one file per primary resource)
-   - Implements every endpoint from the ## API Spec for that resource
-   - Uses db: sqlite3.Connection = Depends(get_db) for the DB connection
-   - Returns appropriate HTTP status codes
-   - Wraps handlers in try/except and raises HTTPException on errors
-
----
-## Shared constraints (both frameworks)
-- The SQLite file must be stored at ./data/app.db (relative to backend/)
-- Create the data/ directory in the startup/init code if it does not exist
-- CORS must allow http://localhost:5173 so the Vite dev server can connect
+### Shared constraints
+- SQLite file stored at data/app.db relative to the backend/ directory
+- Create the data/ directory in DatabaseFactory.init() if it does not exist
+- CORS must allow http://localhost:5173
 - Every endpoint path must match the ## API Spec exactly — no deviations
-- No authentication required — keep scope to unauthenticated CRUD
+- Use kotlinx.serialization (@Serializable) for all JSON — do NOT use Gson or Jackson
+- No authentication required — unauthenticated CRUD only
 
 ## Context (design document follows)
-The full design.md output is provided — read ## API Spec and ## DB Schema.
+The full design.md is provided — read ## API Spec and ## DB Schema carefully.
 Implement every endpoint listed. Do not add endpoints not in the spec.

@@ -5,11 +5,21 @@ A two-session course students build a complete full-stack web application using 
 
 ---
 
-## What Students Build
+## Tech Stack
 
-Students pick a project idea, run four AI agents in sequence, and end up with a locally-running full-stack app pushed to their own GitHub repo — in two class sessions.
+| Layer | Technology |
+|---|---|
+| Frontend | React 18 + Vite |
+| Backend | Kotlin + Ktor + Exposed |
+| Database | SQLite (file-based, zero config) |
+| Build | Gradle with Kotlin DSL |
+| Runtime | JDK 21+ |
 
-**The four-agent pipeline:**
+Everything runs locally — no cloud accounts, no billing, no deployment required.
+
+---
+
+## The Four-Agent Pipeline
 
 ```
 [Your Idea]
@@ -18,19 +28,18 @@ Students pick a project idea, run four AI agents in sequence, and end up with a 
 01_design_agent   ──► design.md
                        (API spec + DB schema + component tree)
     │
-    ├──────────────────────────────────────┐
-    ▼                                      ▼
-02_frontend_agent                  03_backend_agent
-──► frontend_output.md             ──► backend_output.md
-──► extract → frontend/            ──► extract → backend/
-    │                                      │
-    └──────────────┬───────────────────────┘
+    ├──────────────────────────────────────────┐
+    ▼                                          ▼
+02_frontend_agent                      03_backend_agent
+──► frontend_output.md                 ──► backend_output.md
+──► extract → frontend/                ──► extract → backend/
+    (React + Vite)                         (Kotlin + Ktor)
+    │                                          │
+    └──────────────┬───────────────────────────┘
                    ▼
            04_review_agent
            ──► REVIEW.md
 ```
-
-**Tech stack:** React + Vite · Node/Express or Python/FastAPI · SQLite
 
 ---
 
@@ -41,13 +50,14 @@ course-ai-agents/
 ├── prompts/
 │   ├── 01_design_agent.md      # Architect — writes design.md
 │   ├── 02_frontend_agent.md    # React dev — writes frontend_output.md
-│   ├── 03_backend_agent.md     # API dev — writes backend_output.md
+│   ├── 03_backend_agent.md     # Kotlin/Ktor dev — writes backend_output.md
 │   └── 04_review_agent.md      # Reviewer — writes REVIEW.md
 ├── scripts/
 │   └── extract_files.py        # Splits output .md files into real source dirs
 ├── skills/
 │   └── build-app.md            # /build-app skill — chains all four agents
-├── SETUP.md                    # Student environment setup guide (Mac + Windows)
+├── LESSON_PLAN.md              # Instructor guide with timed blocks
+├── SETUP.md                    # Student environment setup (Mac + Windows)
 └── README.md                   # This file
 ```
 
@@ -56,10 +66,12 @@ course-ai-agents/
 ## Quick Start (Students)
 
 **Step 1 — Set up your environment**
-Follow [SETUP.md](./SETUP.md) before your first class session.
+Follow [SETUP.md](./SETUP.md). You need: JDK 21+, Node.js 18+, Claude Code CLI, Git.
 
-**Step 2 — Install the skill**
+**Step 2 — Clone this repo and install the skill**
 ```bash
+git clone https://github.com/badinvestor/ai-fullstack-project.git
+cd ai-fullstack-project
 claude skill install skills/build-app.md
 ```
 
@@ -72,17 +84,10 @@ claude skill install skills/build-app.md
 | Campus / Social | Study Group Finder · Campus Event Board · Peer Tutoring Board |
 | Fun / Creative | Movie/Book Wishlist · Recipe Box · Trivia Game Builder |
 
-**Step 4 — Run the pipeline**
-
-Option A — one command with the skill:
-```bash
-/build-app "habit tracker" node
-```
-
-Option B — run each agent manually (recommended for learning):
+**Step 4 — Run the pipeline (manual — recommended for learning)**
 ```bash
 # Agent 01 — design
-claude -p "$(sed -e 's|{PROJECT_IDEA}|Habit Tracker|g' -e 's|{BACKEND}|node|g' \
+claude -p "$(sed 's|{PROJECT_IDEA}|Habit Tracker|g' \
   prompts/01_design_agent.md)" > design.md
 
 # Agent 02 — frontend
@@ -90,8 +95,8 @@ claude -p "$(cat prompts/02_frontend_agent.md)" \
   --context "$(cat design.md)" > frontend_output.md
 python3 scripts/extract_files.py frontend_output.md
 
-# Agent 03 — backend
-claude -p "$(sed 's|{BACKEND}|node|g' prompts/03_backend_agent.md)" \
+# Agent 03 — Kotlin backend
+claude -p "$(cat prompts/03_backend_agent.md)" \
   --context "$(cat design.md)" > backend_output.md
 python3 scripts/extract_files.py backend_output.md
 
@@ -102,27 +107,20 @@ claude -p "$(cat prompts/04_review_agent.md)" \
                printf '\n\n# BACKEND\n'; cat backend_output.md)" > REVIEW.md
 ```
 
+Or use the skill: `/build-app "habit tracker"`
+
 **Step 5 — Run your app locally**
 ```bash
-# Terminal 1 — frontend
-cd frontend && npm install && npm run dev
-# → http://localhost:5173
+# Terminal 1 — Kotlin backend (first run ~1-2 min to download deps)
+cd backend
+./gradlew run          # Mac/Linux
+gradlew.bat run        # Windows
+# → API at http://localhost:3001
 
-# Terminal 2 — backend (Node)
-cd backend && npm install && node server.js
-# → http://localhost:3001
-
-# Terminal 2 — backend (Python)
-cd backend && pip install -r requirements.txt
-uvicorn main:app --reload --port 3001
-# → http://localhost:3001/docs
-```
-
-**Step 6 — Push to GitHub**
-```bash
-git add design.md frontend_output.md backend_output.md REVIEW.md frontend/ backend/
-git commit -m "feat: multi-agent generated full-stack app"
-git push
+# Terminal 2 — React frontend
+cd frontend
+npm install && npm run dev
+# → App at http://localhost:5173
 ```
 
 ---
@@ -139,11 +137,18 @@ git push
 
 ---
 
-## Windows Notes
+## Kotlin Backend Structure
 
-All `$(cat ...)` commands use PowerShell equivalents. Each prompt file's `HOW TO RUN` section includes the PowerShell version. The extract script works identically on both platforms:
-```powershell
-python scripts\extract_files.py frontend_output.md
+```
+backend/
+├── build.gradle.kts
+├── settings.gradle.kts
+├── gradle/wrapper/gradle-wrapper.properties
+└── src/main/kotlin/com/app/
+    ├── Application.kt          # Ktor server, CORS, routing
+    ├── DatabaseFactory.kt      # SQLite init, seed data
+    ├── models/<Resource>.kt    # Exposed Table + @Serializable data classes
+    └── routes/<Resource>Routes.kt  # Ktor route handlers
 ```
 
 ---
@@ -151,16 +156,10 @@ python scripts\extract_files.py frontend_output.md
 ## Prerequisites
 
 - Free [claude.ai](https://claude.ai) account
-- Claude Code CLI installed and authenticated
-- Node.js v18+
-- Python 3.10+ (FastAPI track only)
-- Git configured with your name and email
+- Claude Code CLI
+- JDK 21+ — see SETUP.md Section 2
+- Node.js 18+
+- Python 3.10+ (for extract_files.py)
+- Git
 
-See [SETUP.md](./SETUP.md) for step-by-step installation instructions.
-
----
-
-## For Instructors
-
-Slide deck, lesson plan, and instructor prompts are maintained separately.
-Contact the course team for access to the instructor materials repository.
+See [SETUP.md](./SETUP.md) for full installation instructions.

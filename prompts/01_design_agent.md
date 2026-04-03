@@ -3,40 +3,33 @@
      AGENT ROLE:  System Architect
      ---------------------------------------------------------------
      READS:   Nothing — this is the first agent in the pipeline.
-              You supply your project idea and backend choice
-              on the command line when you run it.
+              You supply your project idea on the command line.
 
      WRITES:  design.md
               This file becomes the shared contract for every
-              other agent. Do NOT skip or modify it by hand
-              unless you re-run the agents that depend on it.
+              other agent. Do NOT modify it by hand —
+              re-run this agent instead.
 
      HOW TO RUN:
        Replace "Your Project Idea" with your chosen app title.
-       Replace "node" with "python" if you prefer FastAPI.
 
        Mac / Linux:
          claude -p "$(sed \
            -e 's|{PROJECT_IDEA}|Your Project Idea|g' \
-           -e 's|{BACKEND}|node|g' \
            prompts/01_design_agent.md)" > design.md
 
        Windows (PowerShell):
          $prompt = (Get-Content prompts\01_design_agent.md -Raw) `
-           -replace '\{PROJECT_IDEA\}','Your Project Idea' `
-           -replace '\{BACKEND\}','node'
+           -replace '\{PROJECT_IDEA\}','Your Project Idea'
          claude -p $prompt | Out-File -Encoding utf8 design.md
 
      VERIFY OUTPUT:
-       cat design.md               (Mac/Linux)
-       Get-Content design.md       (Windows)
-       You should see three sections:
-         ## API Spec
-         ## DB Schema
-         ## Component Tree
+       grep "^## API Spec\|^## DB Schema\|^## Component Tree" design.md
+       You should see exactly three lines printed.
 
      NEXT STEP:
        Run prompts/02_frontend_agent.md — it reads design.md.
+       Run prompts/03_backend_agent.md  — it also reads design.md.
 ============================================================ -->
 
 ## System
@@ -46,8 +39,8 @@ Do NOT write any implementation code — output the specification only.
 Every section below is required. Missing sections will break downstream agents.
 
 ## Task
-Given the project idea and backend framework below, output exactly three sections.
-Use the exact markdown headers shown — downstream agents parse these headers by name.
+Given the project idea below, output exactly three sections using the exact
+markdown headers shown — downstream agents parse these headers by name.
 
 ### Section 1 — ## API Spec
 List every REST endpoint the application needs.
@@ -82,10 +75,10 @@ For each component provide:
 
 ## Context
 Project Idea: {PROJECT_IDEA}
-Backend Framework: {BACKEND}
+Backend: Kotlin + Ktor + Exposed + SQLite
 
 ## Constraints
-- Output markdown only — no JavaScript, Python, or SQL code blocks
+- Output markdown only — no Kotlin, JavaScript, or SQL code blocks
 - Use plain markdown tables or bullet lists for structure
 - Every API endpoint must have a corresponding DB table or column
 - Every Component must reference at least one API endpoint

@@ -8,8 +8,8 @@
               ALL THREE files must exist before running this agent.
 
      WRITES:  REVIEW.md
-              A structured code review report. Read it carefully
-              before running your app — fix Priority 1 issues first.
+              A structured code review report. Read ## Priority 1
+              before running your app — fix those issues first.
 
      HOW TO RUN (must run agents 01, 02, and 03 first):
 
@@ -29,9 +29,8 @@
            Out-File -Encoding utf8 REVIEW.md
 
      VERIFY OUTPUT:
-       grep "^## " REVIEW.md      (Mac/Linux)
-       Select-String "^## " REVIEW.md  (Windows)
-       You should see sections:
+       grep "^## " REVIEW.md
+       Expected sections:
          ## Contract Audit
          ## Frontend Review
          ## Backend Review
@@ -39,16 +38,6 @@
          ## Priority 2 — Fix Before Shipping
          ## Priority 3 — Nice to Have
          ## Quick Win
-
-     HOW TO USE THE REVIEW:
-       1. Read ## Priority 1 first — these will prevent the app from running
-       2. Read ## Contract Audit — mismatches here cause silent 404/undefined bugs
-       3. Fix issues, then re-run the relevant agent (02 or 03) to regenerate
-       4. Re-run this agent to confirm issues are resolved
-
-     NEXT STEP:
-       Run the /build-app skill (skills/build-app.md) to chain everything
-       automatically, or proceed to running the app locally.
 ============================================================ -->
 
 ## System
@@ -58,25 +47,21 @@ You review with the eye of someone who will be on-call if this app breaks.
 You are not generating new code — you are auditing existing code.
 
 ## Task
-You have been given three documents in context, clearly separated by headers:
+You have been given three documents in context, separated by headers:
 - **# DESIGN** — the original design.md (API Spec, DB Schema, Component Tree)
-- **# FRONTEND** — frontend_output.md (all React source files)
-- **# BACKEND** — backend_output.md (all server source files)
+- **# FRONTEND** — frontend_output.md (React + Vite source files)
+- **# BACKEND** — backend_output.md (Kotlin + Ktor + Exposed source files)
 
-Produce a structured review report with the sections below.
-Use the exact markdown headers shown — they are parsed by the /build-app skill.
+Produce a structured review report with the exact sections below.
 
 ---
 
 ### ## Contract Audit
-This is the most important section. The frontend and backend were generated
-independently from the same design.md. Verify the contract held.
-
-For each API endpoint in the ## API Spec, check:
-- Does the backend implement it at exactly that path and method?
-- Does the frontend api.js call it at exactly that path and method?
+For each API endpoint in the ## API Spec, verify:
+- Does the Kotlin Ktor route implement it at exactly that path and method?
+- Does the React api.js call it at exactly that path and method?
 - Does the request body shape match on both sides?
-- Does the response field names match what the frontend destructures?
+- Does the Exposed model's @Serializable data class match what the frontend destructures?
 
 List every mismatch as: `MISMATCH: [endpoint] — [what differs]`
 List matched endpoints as: `OK: [endpoint]`
@@ -87,21 +72,21 @@ List matched endpoints as: `OK: [endpoint]`
 For each component in the ## Component Tree:
 - Does it exist in frontend_output.md?
 - Does it handle loading and error states?
-- Are prop types defined?
+- Are PropTypes defined?
 - Any hardcoded values that should come from the API?
-- Any missing useEffect cleanup that could cause memory leaks?
 
 Rate overall frontend quality 1–5 with one sentence justification.
 
 ---
 
 ### ## Backend Review
-For each endpoint in the ## API Spec:
+For each Ktor route:
 - Is it fully implemented (no TODO, no stub)?
-- Does the SQL query use parameterized statements (no string concatenation)?
+- Does it use Exposed transactions correctly?
 - Is the HTTP status code correct (201 for POST creates, 404 for missing records)?
-- Is there error handling around the database call?
-- Does the response shape match the ## API Spec exactly?
+- Is there error handling (try/catch)?
+- Does the @Serializable response match the ## API Spec exactly?
+- Are there any SQL injection risks (Exposed parameterized queries should prevent these)?
 
 Rate overall backend quality 1–5 with one sentence justification.
 
@@ -113,14 +98,13 @@ Format each as:
 ```
 File: <filename>
 Issue: <what is wrong>
-Fix: <exactly what to change — be specific>
+Fix: <exactly what to change>
 ```
 
 ---
 
 ### ## Priority 2 — Fix Before Shipping
-Issues that will cause bugs or data loss under normal usage.
-Same format as Priority 1.
+Issues that will cause bugs or data loss under normal usage. Same format.
 
 ---
 
@@ -130,11 +114,11 @@ Style, performance, or accessibility improvements. One sentence each.
 ---
 
 ### ## Quick Win
-The single most impactful change that takes under 10 minutes to make.
-Show the before and after code side by side.
+The single most impactful change that takes under 10 minutes.
+Show before and after code side by side.
 
 ## Constraints
 - Do not rewrite entire files — give targeted, surgical fixes
 - Do not suggest adding features not in the original design
-- Flag SQL injection risks even if the framework usually protects against them
+- Flag any raw string interpolation in SQL queries (Exposed should prevent this)
 - If a section has no issues, write "No issues found." — do not omit the section
