@@ -12,21 +12,22 @@
               before running your app — fix those issues first.
 
      HOW TO RUN (must run agents 01, 02, and 03 first):
+     NOTE: Use the /build-app skill in Claude Code — it runs all agents
+     automatically. The commands below are for manual/reference use only.
 
        Mac / Linux:
-         claude -p "$(cat prompts/04_review_agent.md)" \
-           --context "$(printf '# DESIGN\n'; cat design.md; \
-                        printf '\n\n# FRONTEND\n'; cat frontend_output.md; \
-                        printf '\n\n# BACKEND\n'; cat backend_output.md)" \
+         claude -p "$(cat prompts/04_review_agent.md; \
+           printf '\n\n# DESIGN\n'; cat design.md; \
+           printf '\n\n# FRONTEND\n'; cat frontend_output.md; \
+           printf '\n\n# BACKEND\n'; cat backend_output.md)" \
            > REVIEW.md
 
        Windows (PowerShell):
-         $prompt  = Get-Content prompts\04_review_agent.md -Raw
-         $context = "# DESIGN`n" + (Get-Content design.md -Raw) + `
-                    "`n`n# FRONTEND`n" + (Get-Content frontend_output.md -Raw) + `
-                    "`n`n# BACKEND`n" + (Get-Content backend_output.md -Raw)
-         claude -p $prompt --context $context | `
-           Out-File -Encoding utf8 REVIEW.md
+         $combined = (Get-Content prompts\04_review_agent.md -Raw) + `
+                     "`n`n# DESIGN`n" + (Get-Content design.md -Raw) + `
+                     "`n`n# FRONTEND`n" + (Get-Content frontend_output.md -Raw) + `
+                     "`n`n# BACKEND`n" + (Get-Content backend_output.md -Raw)
+         claude -p $combined | Out-File -Encoding utf8 REVIEW.md
 
      VERIFY OUTPUT:
        grep "^## " REVIEW.md

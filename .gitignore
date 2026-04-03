@@ -1,0 +1,30 @@
+# Generated output files — re-create by running /build-app
+design.md
+frontend_output.md
+backend_output.md
+REVIEW.md
+RUNBOOK.md
+
+# Extracted app code — generated from output files
+frontend/
+backend/
+
+# Gradle
+.gradle/
+build/
+*.class
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# SQLite database
+*.db
+data/
+
+# OS / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

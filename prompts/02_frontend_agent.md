@@ -14,17 +14,19 @@
               actual frontend/ directory (instructions below).
 
      HOW TO RUN (must run 01_design_agent.md first):
+     NOTE: Use the /build-app skill in Claude Code — it runs all agents
+     automatically. The commands below are for manual/reference use only.
 
        Mac / Linux:
-         claude -p "$(cat prompts/02_frontend_agent.md)" \
-           --context "$(cat design.md)" \
+         claude -p "$(cat prompts/02_frontend_agent.md; \
+           printf '\n\n## Context (design.md)\n'; cat design.md)" \
            > frontend_output.md
 
        Windows (PowerShell):
-         $prompt  = Get-Content prompts\02_frontend_agent.md -Raw
-         $context = Get-Content design.md -Raw
-         claude -p $prompt --context $context | `
-           Out-File -Encoding utf8 frontend_output.md
+         $combined = (Get-Content prompts\02_frontend_agent.md -Raw) + `
+                     "`n`n## Context (design.md)`n" + `
+                     (Get-Content design.md -Raw)
+         claude -p $combined | Out-File -Encoding utf8 frontend_output.md
 
      EXTRACT FILES (after running):
        Each fenced code block in frontend_output.md is labelled with
