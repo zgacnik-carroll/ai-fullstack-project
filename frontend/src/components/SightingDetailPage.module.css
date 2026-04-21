@@ -1,0 +1,15 @@
+.page {
+  max-width: 600px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+.title {
+  font-size: 1.6rem;
+  color: #1a2e1a;
+  margin-bottom: 1rem;
+}
+
+.error {
+  color: #c0392b;
+}

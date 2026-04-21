@@ -1,0 +1,40 @@
+.bar {
+  display: flex;
+  gap: 1rem;
+  align-items: flex-end;
+  padding: 1rem;
+  background-color: #e8f5e8;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #2d6a2d;
+}
+
+.field select,
+.field input {
+  padding: 0.35rem 0.5rem;
+  border: 1px solid #a8d5a8;
+  border-radius: 4px;
+  font-size: 0.9rem;
+}
+
+.clearBtn {
+  padding: 0.38rem 0.9rem;
+  background: none;
+  border: 1px solid #2d6a2d;
+  border-radius: 4px;
+  color: #2d6a2d;
+  font-size: 0.85rem;
+}
+
+.clearBtn:hover {
+  background-color: #d0ebd0;
+}

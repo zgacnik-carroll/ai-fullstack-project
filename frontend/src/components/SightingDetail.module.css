@@ -1,0 +1,40 @@
+.card {
+  background: #fff;
+  border-radius: 8px;
+  padding: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.dl {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 0.5rem 1rem;
+}
+
+.dl dt {
+  font-weight: 600;
+  color: #2d6a2d;
+}
+
+.dl dd {
+  margin: 0;
+}
+
+.actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  align-items: center;
+}
+
+.editBtn {
+  background-color: #2d6a2d;
+  color: #fff;
+  padding: 0.4rem 1rem;
+  border-radius: 4px;
+}
+
+.editBtn:hover {
+  background-color: #245724;
+  text-decoration: none;
+}

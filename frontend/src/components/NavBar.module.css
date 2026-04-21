@@ -1,0 +1,27 @@
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.75rem 1.5rem;
+  background-color: #2d6a2d;
+  color: #fff;
+}
+
+.brand {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #fff;
+}
+
+.addLink {
+  background-color: #fff;
+  color: #2d6a2d;
+  padding: 0.35rem 0.9rem;
+  border-radius: 4px;
+  font-weight: 600;
+}
+
+.addLink:hover {
+  background-color: #e8f5e8;
+  text-decoration: none;
+}

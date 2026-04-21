@@ -1,0 +1,24 @@
+.row td {
+  padding: 0.65rem 0.75rem;
+  border-bottom: 1px solid #d0ebd0;
+  vertical-align: middle;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.deleteBtn {
+  background: none;
+  border: 1px solid #c0392b;
+  color: #c0392b;
+  border-radius: 4px;
+  padding: 0.2rem 0.5rem;
+  font-size: 0.8rem;
+}
+
+.deleteBtn:hover {
+  background-color: #fdecea;
+}
